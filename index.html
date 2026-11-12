@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en" class="intro-on">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="theme-color" content="#060706" />
+<title>Doomsday Countdown — Marvel Watchlist</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    color-scheme:dark;
+    --bg:#060706;
+    --surface:#0c0e0c;
+    --surface2:#111411;
+    --line:rgba(255,255,255,.08);
+    --line2:rgba(255,255,255,.16);
+    --text:#eef1ec;
+    --muted:#8a928a;
+    --dim:#5d655d;
+    --acc:#8cff5a;
+    --acc-soft:rgba(140,255,90,.10);
+    --acc-line:rgba(140,255,90,.38);
+    --ease:cubic-bezier(.22,1,.36,1);
+    --mono:"JetBrains Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+    --sans:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+  }
+  *{box-sizing:border-box}
+  [hidden]{display:none!important}
+  html.intro-on,html.intro-on body{overflow:hidden}
+  body{
+    margin:0;min-height:100vh;color:var(--text);font-family:var(--sans);
+    background:var(--bg);-webkit-font-smoothing:antialiased;
+  }
+  /* static background: grid + one soft vignette (no blur, no animation = zero lag) */
+  body:before{
+    content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
+    background:
+      radial-gradient(ellipse 60% 40% at 50% -5%,rgba(140,255,90,.07),transparent 70%),
+      linear-gradient(rgba(255,255,255,.028) 1px,transparent 1px) 0 0/56px 56px,
+      linear-gradient(90deg,rgba(255,255,255,.028) 1px,transparent 1px) 0 0/56px 56px;
+    -webkit-mask-image:radial-gradient(ellipse 80% 70% at 50% 20%,#000 30%,transparent 100%);
+    mask-image:radial-gradient(ellipse 80% 70% at 50% 20%,#000 30%,transparent 100%);
+  }
+
+  /* ───────── INTRO ───────── */
+  #intro{position:fixed;inset:0;z-index:100;pointer-events:all}
+  #intro .panel{position:absolute;left:0;right:0;height:50.2%;background:#040504;transition:transform .95s var(--ease);will-change:transform}
+  #intro .top{top:0;border-bottom:1px solid var(--acc-line)}
+  #intro .bot{bottom:0}
+  #intro .core{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;padding:24px;transition:opacity .45s ease,transform .6s var(--ease);will-change:opacity,transform}
+  .i-tag{font-family:var(--mono);font-size:11px;letter-spacing:.32em;color:var(--muted);text-transform:uppercase;opacity:0;animation:fadeIn .6s .1s forwards}
+  .i-title{display:flex;overflow:hidden;font-weight:800;letter-spacing:-.05em;line-height:1;font-size:clamp(46px,13vw,148px);padding:.04em .02em}
+  .i-title span{display:inline-block;transform:translateY(105%);animation:letterUp .85s var(--ease) forwards;animation-delay:calc(.25s + var(--i)*.055s)}
+  .i-row{width:min(420px,78vw);display:flex;flex-direction:column;gap:10px}
+  .i-line{height:1px;background:var(--line2);overflow:hidden}
+  .i-line i{display:block;height:100%;background:var(--acc);transform:scaleX(0);transform-origin:left;will-change:transform}
+  .i-meta{display:flex;justify-content:space-between;font-family:var(--mono);font-size:11px;letter-spacing:.2em;color:var(--muted)}
+  .i-meta b{color:var(--acc);font-weight:500}
+  .i-skip{position:absolute;bottom:26px;font-family:var(--mono);font-size:10px;letter-spacing:.26em;color:var(--dim);background:none;border:0;cursor:pointer;text-transform:uppercase;padding:8px 12px;opacity:0;animation:fadeIn .6s .9s forwards}
+  .i-skip:hover{color:var(--text)}
+  #intro.open .core{opacity:0;transform:scale(1.04)}
+  #intro.open .top{transform:translateY(-101%)}
+  #intro.open .bot{transform:translateY(101%)}
+  #intro.gone{display:none}
+  @keyframes letterUp{to{transform:translateY(0)}}
+  @keyframes fadeIn{to{opacity:1}}
+
+  /* ───────── LAYOUT ───────── */
+  .wrap{width:min(1120px,calc(100% - 40px));margin:auto;padding:34px 0 80px}
+  .rise{opacity:0;transform:translateY(16px);transition:opacity .8s var(--ease),transform .8s var(--ease);transition-delay:calc(var(--d,0)*1ms)}
+  body.ready .rise{opacity:1;transform:none}
+
+  .topline{display:flex;align-items:center;justify-content:space-between;gap:16px;padding-bottom:22px;border-bottom:1px solid var(--line);margin-bottom:52px}
+  .brand{display:flex;align-items:center;gap:12px;font-family:var(--mono);font-size:11px;letter-spacing:.24em;color:var(--text);text-transform:uppercase}
+  .brand-mark{width:22px;height:22px;border:1px solid var(--acc);display:grid;place-items:center;position:relative}
+  .brand-mark:after{content:"";width:6px;height:6px;background:var(--acc)}
+  .release{display:flex;align-items:center;gap:10px;font-family:var(--mono);font-size:11px;letter-spacing:.16em;color:var(--muted);text-transform:uppercase}
+  .dot{width:6px;height:6px;border-radius:50%;background:var(--acc);animation:pulse 2s ease-in-out infinite}
+  @keyframes pulse{50%{opacity:.25}}
+
+  .hero{display:grid;grid-template-columns:1.35fr .65fr;gap:56px;align-items:start;margin-bottom:34px}
+  .eyebrow{font-family:var(--mono);color:var(--acc);font-size:11px;letter-spacing:.28em;text-transform:uppercase}
+  h1{font-size:clamp(42px,7vw,86px);line-height:.95;letter-spacing:-.055em;font-weight:800;margin:20px 0 22px}
+  h1 em{font-style:normal;color:var(--acc)}
+  .intro{max-width:520px;color:var(--muted);font-size:15px;line-height:1.7;margin:0 0 36px}
+
+  .countdown{display:grid;grid-template-columns:repeat(4,1fr);max-width:520px;border:1px solid var(--line);background:var(--surface)}
+  .cd{padding:16px 16px 14px;border-right:1px solid var(--line)}
+  .cd:last-child{border-right:0}
+  .cd b{display:block;font-family:var(--mono);font-weight:500;font-size:clamp(26px,4vw,38px);letter-spacing:-.04em;font-variant-numeric:tabular-nums;color:var(--text)}
+  .cd small{font-family:var(--mono);font-size:9px;letter-spacing:.22em;color:var(--dim);text-transform:uppercase}
+
+  .progress-card{border:1px solid var(--line);background:var(--surface);padding:24px;position:relative}
+  .progress-card:before{content:"";position:absolute;top:-1px;left:-1px;width:28px;height:28px;border-top:1px solid var(--acc);border-left:1px solid var(--acc)}
+  .progress-head{display:flex;justify-content:space-between;font-family:var(--mono);font-size:10px;letter-spacing:.22em;color:var(--muted);text-transform:uppercase}
+  .percent{font-size:64px;font-weight:700;letter-spacing:-.07em;line-height:1;margin:22px 0 20px;font-variant-numeric:tabular-nums}
+  .percent span{font-size:22px;color:var(--acc);margin-left:4px;letter-spacing:0}
+  .segs{display:grid;grid-template-columns:repeat(39,1fr);gap:2px;height:20px}
+  .segs i{background:rgba(255,255,255,.07);transition:background .3s ease}
+  .segs i.on{background:var(--acc)}
+  #progress-message{display:block;margin-top:16px;font-size:12px;color:var(--muted);line-height:1.5}
+  .stats{display:grid;grid-template-columns:repeat(3,1fr);margin-top:22px;border-top:1px solid var(--line)}
+  .stat{padding:14px 0 0}
+  .stat b{display:block;font-family:var(--mono);font-weight:500;font-size:20px}
+  .stat small{font-family:var(--mono);color:var(--dim);font-size:9px;letter-spacing:.18em;text-transform:uppercase}
+
+  .toolbar{display:flex;gap:10px;align-items:stretch;flex-wrap:wrap;margin:44px 0 12px}
+  .search{position:relative;flex:1;min-width:220px}
+  .search input{width:100%;height:46px;padding:0 16px 0 44px;border:1px solid var(--line);background:var(--surface);color:var(--text);outline:none;font:inherit;font-size:13px;transition:border-color .2s}
+  .search input::placeholder{color:var(--dim)}
+  .search input:focus{border-color:var(--acc-line)}
+  .search svg{position:absolute;left:16px;top:15px;width:16px;height:16px;stroke:var(--dim);fill:none;stroke-width:1.8}
+  .filters{display:flex;border:1px solid var(--line);background:var(--surface)}
+  .filter,.reset{border:0;background:transparent;color:var(--muted);font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;cursor:pointer;transition:color .2s,background .2s,border-color .2s}
+  .filter{padding:0 18px}
+  .filter:hover,.reset:hover{color:var(--text)}
+  .filter.active{background:var(--acc-soft);color:var(--acc)}
+  .reset{border:1px solid var(--line);padding:0 18px;background:var(--surface)}
+  .reset:hover{border-color:var(--line2)}
+
+  .phase{margin-top:44px;opacity:0;transform:translateY(18px);transition:opacity .7s var(--ease),transform .7s var(--ease)}
+  .phase.in{opacity:1;transform:none}
+  .phase-head{display:flex;align-items:end;justify-content:space-between;gap:14px;padding-bottom:14px;margin-bottom:12px;border-bottom:1px solid var(--line)}
+  .phase-kicker{font-family:var(--mono);font-size:10px;letter-spacing:.24em;text-transform:uppercase;color:var(--acc)}
+  h2{font-size:24px;letter-spacing:-.04em;font-weight:700;margin:8px 0 0}
+  .phase-count{font-family:var(--mono);font-size:11px;letter-spacing:.1em;color:var(--muted);white-space:nowrap}
+
+  .items{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .item{position:relative;display:flex;align-items:center;gap:14px;min-height:68px;padding:12px 16px;border:1px solid var(--line);background:var(--surface);cursor:pointer;transition:border-color .2s,background .2s,transform .2s var(--ease)}
+  .item:hover{border-color:var(--line2);background:var(--surface2);transform:translateX(3px)}
+  .item:before{content:"";position:absolute;left:-1px;top:-1px;bottom:-1px;width:2px;background:var(--acc);transform:scaleY(0);transition:transform .3s var(--ease)}
+  .item.done{background:linear-gradient(90deg,var(--acc-soft),transparent 70%),var(--surface)}
+  .item.done:before{transform:scaleY(1)}
+  .check{appearance:none;-webkit-appearance:none;width:20px;height:20px;flex:0 0 20px;border:1px solid var(--dim);display:grid;place-items:center;cursor:pointer;margin:0;background:transparent;transition:background .2s,border-color .2s}
+  .check:hover{border-color:var(--acc)}
+  .check:checked{background:var(--acc);border-color:var(--acc)}
+  .check:checked:after{content:"";width:9px;height:5px;border-left:2px solid #061006;border-bottom:2px solid #061006;transform:translateY(-1px) rotate(-45deg)}
+  .check:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+  .number{font-family:var(--mono);font-size:11px;color:var(--dim);min-width:22px;font-variant-numeric:tabular-nums}
+  .item-title{font-size:13.5px;font-weight:600;line-height:1.4;flex:1;display:flex;align-items:center;justify-content:space-between;gap:12px;letter-spacing:-.01em}
+  .item.done .item-title{color:var(--dim);text-decoration:line-through;text-decoration-color:rgba(140,255,90,.5)}
+  .kind{font-family:var(--mono);font-weight:400;font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);border:1px solid var(--line);padding:4px 7px;white-space:nowrap;text-decoration:none}
+
+  .empty{display:none;text-align:center;color:var(--muted);padding:44px 12px;border:1px dashed var(--line2);margin-top:30px;font-size:13px}
+  footer{margin-top:60px;padding-top:20px;border-top:1px solid var(--line);display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;font-family:var(--mono);color:var(--dim);font-size:10px;letter-spacing:.14em;text-transform:uppercase;line-height:1.7}
+  footer strong{color:var(--muted);font-weight:500}
+
+  .toast{position:fixed;bottom:24px;left:50%;transform:translate(-50%,16px);opacity:0;background:var(--surface2);border:1px solid var(--acc-line);padding:12px 18px;color:var(--text);font-family:var(--mono);font-size:11px;letter-spacing:.08em;pointer-events:none;transition:opacity .25s,transform .35s var(--ease);z-index:50}
+  .toast.show{opacity:1;transform:translate(-50%,0)}
+
+  @media(max-width:860px){.hero{grid-template-columns:1fr;gap:34px}.items{grid-template-columns:1fr}.topline{margin-bottom:36px}}
+  @media(max-width:480px){.wrap{width:calc(100% - 28px)}.release span.long{display:none}.kind{display:none}.item{padding:12px}.filters{width:100%}.filter{flex:1;padding:14px 0}.reset{width:100%;height:46px}.percent{font-size:54px}.cd{padding:12px 10px}}
+  @media(prefers-reduced-motion:reduce){
+    *,*:before,*:after{animation:none!important;transition-duration:.01ms!important}
+    .rise,.phase{opacity:1;transform:none}
+  }
+</style>
+</head>
+<body>
+
+<div id="intro" aria-hidden="true">
+  <div class="panel top"></div>
+  <div class="panel bot"></div>
+  <div class="core">
+    <div class="i-tag">Marvel Watch Project</div>
+    <div class="i-title" id="i-title" aria-label="Doomsday"></div>
+    <div class="i-row">
+      <div class="i-line"><i id="i-bar"></i></div>
+      <div class="i-meta"><span>18 · 12 · 2026</span><span><b id="i-count">000</b> / 100</span></div>
+    </div>
+    <button class="i-skip" id="i-skip" type="button">Skip intro</button>
+  </div>
+</div>
+
+<main class="wrap">
+  <div class="topline rise" style="--d:0">
+    <div class="brand"><div class="brand-mark"></div> Marvel Watch Project</div>
+    <div class="release"><span class="dot"></span><span class="long">Doomsday ·&nbsp;</span>Dec 18, 2026</div>
+  </div>
+
+  <section class="hero">
+    <div class="hero-copy">
+      <div class="eyebrow rise" style="--d:80">Your ultimate viewing checklist</div>
+      <h1 class="rise" style="--d:160">The road to<br><em>Doomsday.</em></h1>
+      <p class="intro rise" style="--d:260">Start from the beginning, follow the characters, and work your way through the multiverse. Tick off each title as you finish it — your progress saves automatically on this device.</p>
+      <div class="countdown rise" style="--d:360" aria-label="Time until release">
+        <div class="cd"><b id="cd-d">00</b><small>Days</small></div>
+        <div class="cd"><b id="cd-h">00</b><small>Hours</small></div>
+        <div class="cd"><b id="cd-m">00</b><small>Min</small></div>
+        <div class="cd"><b id="cd-s">00</b><small>Sec</small></div>
+      </div>
+    </div>
+    <aside class="progress-card rise" style="--d:300">
+      <div class="progress-head"><span>Your Marvel journey</span><span id="progress-label">0 / 39</span></div>
+      <div class="percent"><span id="percent-n">0</span><span>%</span></div>
+      <div class="segs" id="segs"></div>
+      <span id="progress-message">Every legend starts somewhere.</span>
+      <div class="stats">
+        <div class="stat"><b id="watched-count">0</b><small>Watched</small></div>
+        <div class="stat"><b id="left-count">39</b><small>Remaining</small></div>
+        <div class="stat"><b id="phase-count">0/3</b><small>Phases</small></div>
+      </div>
+    </aside>
+  </section>
+
+  <section class="toolbar rise" style="--d:420" aria-label="Watchlist controls">
+    <div class="search">
+      <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <input id="search" type="search" placeholder="Search movies or series..." autocomplete="off" />
+    </div>
+    <div class="filters">
+      <button class="filter active" data-filter="all">All</button>
+      <button class="filter" data-filter="unwatched">To watch</button>
+      <button class="filter" data-filter="watched">Watched</button>
+    </div>
+    <button class="reset" id="reset">↺ Reset</button>
+  </section>
+
+  <div id="watchlist">
+    <section class="phase" data-phase="1">
+      <div class="phase-head"><div><div class="phase-kicker">Phase 01 · Mutant beginnings</div><h2>The Original X-Men Universe</h2></div><div class="phase-count" id="phase-1-count">0 / 3 watched</div></div>
+      <div class="items">
+        <label class="item" data-id="1" data-title="X-Men"><input class="check" type="checkbox"><span class="number">01</span><span class="item-title">X-Men <span class="kind">Movie · 2000</span></span></label>
+        <label class="item" data-id="2" data-title="X2: X-Men United"><input class="check" type="checkbox"><span class="number">02</span><span class="item-title">X2: X-Men United <span class="kind">Movie · 2003</span></span></label>
+        <label class="item" data-id="3" data-title="X-Men: The Last Stand"><input class="check" type="checkbox"><span class="number">03</span><span class="item-title">X-Men: The Last Stand <span class="kind">Movie · 2006</span></span></label>
+      </div>
+    </section>
+
+    <section class="phase" data-phase="2">
+      <div class="phase-head"><div><div class="phase-kicker">Phase 02 · The beginning</div><h2>The Marvel Cinematic Universe</h2></div><div class="phase-count" id="phase-2-count">0 / 21 watched</div></div>
+      <div class="items">
+        <label class="item" data-id="4" data-title="Iron Man"><input class="check" type="checkbox"><span class="number">04</span><span class="item-title">Iron Man <span class="kind">Movie · 2008</span></span></label>
+        <label class="item" data-id="5" data-title="The Incredible Hulk"><input class="check" type="checkbox"><span class="number">05</span><span class="item-title">The Incredible Hulk <span class="kind">Movie · 2008</span></span></label>
+        <label class="item" data-id="6" data-title="Iron Man 2"><input class="check" type="checkbox"><span class="number">06</span><span class="item-title">Iron Man 2 <span class="kind">Movie · 2010</span></span></label>
+        <label class="item" data-id="7" data-title="Thor"><input class="check" type="checkbox"><span class="number">07</span><span class="item-title">Thor <span class="kind">Movie · 2011</span></span></label>
+        <label class="item" data-id="8" data-title="Captain America: The First Avenger"><input class="check" type="checkbox"><span class="number">08</span><span class="item-title">Captain America: The First Avenger <span class="kind">Movie · 2011</span></span></label>
+        <label class="item" data-id="9" data-title="The Avengers"><input class="check" type="checkbox"><span class="number">09</span><span class="item-title">The Avengers <span class="kind">Movie · 2012</span></span></label>
+        <label class="item" data-id="10" data-title="Iron Man 3"><input class="check" type="checkbox"><span class="number">10</span><span class="item-title">Iron Man 3 <span class="kind">Movie · 2013</span></span></label>
+        <label class="item" data-id="11" data-title="Thor: The Dark World"><input class="check" type="checkbox"><span class="number">11</span><span class="item-title">Thor: The Dark World <span class="kind">Movie · 2013</span></span></label>
+        <label class="item" data-id="12" data-title="Captain America: The Winter Soldier"><input class="check" type="checkbox"><span class="number">12</span><span class="item-title">Captain America: The Winter Soldier <span class="kind">Movie · 2014</span></span></label>
+        <label class="item" data-id="13" data-title="Guardians of the Galaxy"><input class="check" type="checkbox"><span class="number">13</span><span class="item-title">Guardians of the Galaxy <span class="kind">Movie · 2014</span></span></label>
+        <label class="item" data-id="14" data-title="Avengers: Age of Ultron"><input class="check" type="checkbox"><span class="number">14</span><span class="item-title">Avengers: Age of Ultron <span class="kind">Movie · 2015</span></span></label>
+        <label class="item" data-id="15" data-title="Ant-Man"><input class="check" type="checkbox"><span class="number">15</span><span class="item-title">Ant-Man <span class="kind">Movie · 2015</span></span></label>
+        <label class="item" data-id="16" data-title="Captain America: Civil War"><input class="check" type="checkbox"><span class="number">16</span><span class="item-title">Captain America: Civil War <span class="kind">Movie · 2016</span></span></label>
+        <label class="item" data-id="17" data-title="Doctor Strange"><input class="check" type="checkbox"><span class="number">17</span><span class="item-title">Doctor Strange <span class="kind">Movie · 2016</span></span></label>
+        <label class="item" data-id="18" data-title="Guardians of the Galaxy Vol. 2"><input class="check" type="checkbox"><span class="number">18</span><span class="item-title">Guardians of the Galaxy Vol. 2 <span class="kind">Movie · 2017</span></span></label>
+        <label class="item" data-id="19" data-title="Thor: Ragnarok"><input class="check" type="checkbox"><span class="number">19</span><span class="item-title">Thor: Ragnarok <span class="kind">Movie · 2017</span></span></label>
+        <label class="item" data-id="20" data-title="Black Panther"><input class="check" type="checkbox"><span class="number">20</span><span class="item-title">Black Panther <span class="kind">Movie · 2018</span></span></label>
+        <label class="item" data-id="21" data-title="Avengers: Infinity War"><input class="check" type="checkbox"><span class="number">21</span><span class="item-title">Avengers: Infinity War <span class="kind">Movie · 2018</span></span></label>
+        <label class="item" data-id="22" data-title="Ant-Man and the Wasp"><input class="check" type="checkbox"><span class="number">22</span><span class="item-title">Ant-Man and the Wasp <span class="kind">Movie · 2018</span></span></label>
+        <label class="item" data-id="23" data-title="Captain Marvel"><input class="check" type="checkbox"><span class="number">23</span><span class="item-title">Captain Marvel <span class="kind">Movie · 2019</span></span></label>
+        <label class="item" data-id="24" data-title="Avengers: Endgame"><input class="check" type="checkbox"><span class="number">24</span><span class="item-title">Avengers: Endgame <span class="kind">Movie · 2019</span></span></label>
+      </div>
+    </section>
+
+    <section class="phase" data-phase="3">
+      <div class="phase-head"><div><div class="phase-kicker">Phase 03 · The multiverse saga</div><h2>Across the Multiverse</h2></div><div class="phase-count" id="phase-3-count">0 / 15 watched</div></div>
+      <div class="items">
+        <label class="item" data-id="25" data-title="WandaVision"><input class="check" type="checkbox"><span class="number">25</span><span class="item-title">WandaVision <span class="kind">Series · 2021</span></span></label>
+        <label class="item" data-id="26" data-title="The Falcon and the Winter Soldier"><input class="check" type="checkbox"><span class="number">26</span><span class="item-title">The Falcon and the Winter Soldier <span class="kind">Series · 2021</span></span></label>
+        <label class="item" data-id="27" data-title="Loki Season 1"><input class="check" type="checkbox"><span class="number">27</span><span class="item-title">Loki — Season 1 <span class="kind">Series · 2021</span></span></label>
+        <label class="item" data-id="28" data-title="Black Widow"><input class="check" type="checkbox"><span class="number">28</span><span class="item-title">Black Widow <span class="kind">Movie · 2021</span></span></label>
+        <label class="item" data-id="29" data-title="Shang-Chi and the Legend of the Ten Rings"><input class="check" type="checkbox"><span class="number">29</span><span class="item-title">Shang-Chi and the Legend of the Ten Rings <span class="kind">Movie · 2021</span></span></label>
+        <label class="item" data-id="30" data-title="Loki Season 2"><input class="check" type="checkbox"><span class="number">30</span><span class="item-title">Loki — Season 2 <span class="kind">Series · 2023</span></span></label>
+        <label class="item" data-id="31" data-title="Hawkeye"><input class="check" type="checkbox"><span class="number">31</span><span class="item-title">Hawkeye <span class="kind">Series · 2021</span></span></label>
+        <label class="item" data-id="32" data-title="Spider-Man: No Way Home"><input class="check" type="checkbox"><span class="number">32</span><span class="item-title">Spider-Man: No Way Home <span class="kind">Movie · 2021</span></span></label>
+        <label class="item" data-id="33" data-title="Doctor Strange in the Multiverse of Madness"><input class="check" type="checkbox"><span class="number">33</span><span class="item-title">Doctor Strange in the Multiverse of Madness <span class="kind">Movie · 2022</span></span></label>
+        <label class="item" data-id="34" data-title="Black Panther Wakanda Forever"><input class="check" type="checkbox"><span class="number">34</span><span class="item-title">Black Panther: Wakanda Forever <span class="kind">Movie · 2022</span></span></label>
+        <label class="item" data-id="35" data-title="Ant-Man and the Wasp Quantumania"><input class="check" type="checkbox"><span class="number">35</span><span class="item-title">Ant-Man and the Wasp: Quantumania <span class="kind">Movie · 2023</span></span></label>
+        <label class="item" data-id="36" data-title="Deadpool and Wolverine"><input class="check" type="checkbox"><span class="number">36</span><span class="item-title">Deadpool &amp; Wolverine <span class="kind">Movie · 2024</span></span></label>
+        <label class="item" data-id="37" data-title="Captain America Brave New World"><input class="check" type="checkbox"><span class="number">37</span><span class="item-title">Captain America: Brave New World <span class="kind">Movie · 2025</span></span></label>
+        <label class="item" data-id="38" data-title="Thunderbolts"><input class="check" type="checkbox"><span class="number">38</span><span class="item-title">Thunderbolts* <span class="kind">Movie · 2025</span></span></label>
+        <label class="item" data-id="39" data-title="The Fantastic Four First Steps"><input class="check" type="checkbox"><span class="number">39</span><span class="item-title">The Fantastic Four: First Steps <span class="kind">Movie · 2025</span></span></label>
+      </div>
+    </section>
+  </div>
+  <div class="empty" id="empty">No titles match your search. Try another title or filter.</div>
+  <footer>
+    <span>Made for your journey to <strong>Avengers: Doomsday</strong></span>
+    <span>Progress saved locally in this browser · 39 titles</span>
+  </footer>
+</main>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+/* ───────── INTRO (transform/opacity only → GPU-friendly) ───────── */
+(() => {
+  const root = document.documentElement;
+  const intro = document.getElementById("intro");
+  const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const titleEl = document.getElementById("i-title");
+  "DOOMSDAY".split("").forEach((ch, i) => {
+    const s = document.createElement("span");
+    s.textContent = ch; s.style.setProperty("--i", i);
+    titleEl.appendChild(s);
+  });
+
+  let finished = false;
+  function reveal() {
+    if (finished) return; finished = true;
+    intro.classList.add("open");
+    document.body.classList.add("ready");
+    root.classList.remove("intro-on");
+    setTimeout(() => intro.classList.add("gone"), 1050);
+  }
+
+  if (reduce) { intro.classList.add("gone"); root.classList.remove("intro-on"); document.body.classList.add("ready"); return; }
+
+  const bar = document.getElementById("i-bar");
+  const count = document.getElementById("i-count");
+  const DURATION = 1700;
+  const start = performance.now();
+  (function tick(now) {
+    if (finished) return;
+    const t = Math.min((now - start) / DURATION, 1);
+    const e = 1 - Math.pow(1 - t, 3);
+    bar.style.transform = `scaleX(${e})`;
+    count.textContent = String(Math.round(e * 100)).padStart(3, "0");
+    if (t < 1) requestAnimationFrame(tick);
+    else setTimeout(reveal, 280);
+  })(start);
+
+  const skip = () => reveal();
+  document.getElementById("i-skip").addEventListener("click", skip);
+  intro.addEventListener("click", skip);
+  window.addEventListener("keydown", skip, { once: true });
+})();
+
+/* ───────── WATCHLIST (logic unchanged) ───────── */
+(() => {
+  const KEY = "doomsday-watchlist-v1";
+  const cards = [...document.querySelectorAll(".item")];
+  const checks = cards.map(card => card.querySelector(".check"));
+  const search = document.getElementById("search");
+  const filterButtons = [...document.querySelectorAll(".filter")];
+  let filter = "all";
+  let watched = new Set();
+
+  try {
+    const saved = JSON.parse(localStorage.getItem(KEY) || "[]");
+    if (Array.isArray(saved)) watched = new Set(saved.map(String));
+  } catch (_) {}
+
+  /* segmented progress bar */
+  const segsEl = document.getElementById("segs");
+  const segs = cards.map(() => { const i = document.createElement("i"); segsEl.appendChild(i); return i; });
+
+  function toast(message) {
+    const el = document.getElementById("toast");
+    el.textContent = message;
+    el.classList.add("show");
+    clearTimeout(toast.timer);
+    toast.timer = setTimeout(() => el.classList.remove("show"), 1900);
+  }
+
+  function render() {
+    let totalDone = 0;
+    const phaseTotals = {1:0,2:0,3:0};
+    const phaseDone = {1:0,2:0,3:0};
+    cards.forEach((card, index) => {
+      const done = watched.has(card.dataset.id);
+      checks[index].checked = done;
+      card.classList.toggle("done", done);
+      if (done) {
+        totalDone++;
+        const phase = card.closest(".phase").dataset.phase;
+        phaseDone[phase]++;
+      }
+      const query = search.value.trim().toLowerCase();
+      const matchesSearch = !query || card.dataset.title.toLowerCase().includes(query) || card.textContent.toLowerCase().includes(query);
+      const matchesFilter = filter === "all" || (filter === "watched" ? done : !done);
+      card.hidden = !(matchesSearch && matchesFilter);
+    });
+    segs.forEach((s, i) => s.classList.toggle("on", i < totalDone));
+
+    document.querySelectorAll(".phase").forEach(section => {
+      const phase = section.dataset.phase;
+      const visible = [...section.querySelectorAll(".item")].some(card => !card.hidden);
+      section.hidden = !visible;
+      const count = section.querySelectorAll(".item").length;
+      document.getElementById(`phase-${phase}-count`).textContent = `${phaseDone[phase]} / ${count} watched`;
+    });
+
+    const left = cards.length - totalDone;
+    const pct = Math.round(totalDone / cards.length * 100);
+    document.getElementById("progress-label").textContent = `${totalDone} / ${cards.length}`;
+    document.getElementById("percent-n").textContent = pct;
+    document.getElementById("watched-count").textContent = totalDone;
+    document.getElementById("left-count").textContent = left;
+    document.getElementById("phase-count").textContent = `${Object.keys(phaseTotals).filter(p => phaseDone[p] > 0).length}/3`;
+    document.getElementById("progress-message").textContent =
+      pct === 100 ? "You're ready for Doomsday. 🫡" :
+      pct >= 75 ? "The multiverse is almost yours." :
+      pct >= 40 ? "You're deep into the saga." :
+      pct > 0 ? "Your Marvel journey is underway." : "Every legend starts somewhere.";
+    document.getElementById("empty").style.display = cards.every(card => card.hidden) ? "block" : "none";
+    try { localStorage.setItem(KEY, JSON.stringify([...watched])); } catch (_) {}
+  }
+
+  checks.forEach((check, index) => {
+    check.addEventListener("change", () => {
+      const id = cards[index].dataset.id;
+      if (check.checked) watched.add(id); else watched.delete(id);
+      render();
+      toast(check.checked ? "Added to your watched list ✓" : "Moved back to your watchlist");
+    });
+  });
+
+  search.addEventListener("input", render);
+  filterButtons.forEach(button => button.addEventListener("click", () => {
+    filter = button.dataset.filter;
+    filterButtons.forEach(b => b.classList.toggle("active", b === button));
+    render();
+  }));
+
+  document.getElementById("reset").addEventListener("click", () => {
+    if (!watched.size) { toast("Your progress is already at zero."); return; }
+    if (confirm("Reset all watched progress? This cannot be undone.")) {
+      watched.clear();
+      render();
+      toast("Watchlist progress reset.");
+    }
+  });
+
+  render();
+
+  /* scroll-reveal for phases */
+  const phases = [...document.querySelectorAll(".phase")];
+  if ("IntersectionObserver" in window) {
+    const io = new IntersectionObserver(entries => entries.forEach(en => {
+      if (en.isIntersecting) { en.target.classList.add("in"); io.unobserve(en.target); }
+    }), { rootMargin: "0px 0px -8% 0px", threshold: 0.05 });
+    phases.forEach(p => io.observe(p));
+  } else phases.forEach(p => p.classList.add("in"));
+
+  /* live countdown to Dec 18, 2026 */
+  const target = new Date(2026, 11, 18, 0, 0, 0).getTime();
+  const cd = { d: document.getElementById("cd-d"), h: document.getElementById("cd-h"), m: document.getElementById("cd-m"), s: document.getElementById("cd-s") };
+  const pad = n => String(n).padStart(2, "0");
+  function tickCountdown() {
+    let diff = Math.max(0, target - Date.now());
+    const s = Math.floor(diff / 1000);
+    cd.d.textContent = pad(Math.floor(s / 86400));
+    cd.h.textContent = pad(Math.floor(s % 86400 / 3600));
+    cd.m.textContent = pad(Math.floor(s % 3600 / 60));
+    cd.s.textContent = pad(s % 60);
+  }
+  tickCountdown();
+  setInterval(tickCountdown, 1000);
+})();
+</script>
+</body>
+</html>
